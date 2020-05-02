@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <meta charset="UTF-8">
+    <title>Lightning</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+</head>
+<body data-ng-app="">
+<section class="page-header">
+    <h1 class="project-name">Lightning</h1>
+    <h2 class="project-tagline">Multiple Maven Executions</h2>
+    <div data-ng-include="'top_level_links.html'"></div>
+</section>
+<section class="main-content">
+
+    <p><code>jmeter-lightning-maven-plugin</code> supports multiple plugin executions. This feature is useful when
+        multiple JMeter CSV files need to be tested.</p>
+    
+    <p>Two optional configuration parameters are available, to enable multiple executions,
+        <code>&lt;junitReportSuffix&gt;</code> and <code>&lt;continueOnFailure&gt;</code></p>
+
+    <p><code>&lt;junitReportSuffix&gt;</code> allows you to specify a filename suffix for the JUnit XML report
+        for each plugin execution that Lightning produces, rather than a single <code>junit.xml</code>.</p>
+
+    <p><code>&lt;continueOnFailure&gt;</code> allows you to specify how Lightning behaves when a test fails. By default,
+        Lightning will "fail fast", halting any further executions when a test fails, and exiting with code <code>1</code>. When set
+        to <code>true</code>, Lightning will continue executing when a failure occurs. However, the process will exit
+        with code <code>0</code>, leaving it to the CI server to determine pass/fail via JUnit report processing.</p>
+
+    <p>See an example configuration below:</p>
+
+    <pre><code>&lt;plugin&gt;
+    &lt;groupId&gt;uk.co.automatictester&lt;/groupId&gt;
+    &lt;artifactId&gt;jmeter-lightning-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;${jmeter-lightning-maven-plugin.version}&lt;/version&gt;
+    &lt;executions&gt;
+        &lt;execution&gt;
+            &lt;id&gt;test-foo&lt;/id&gt;
+            &lt;goals&gt;
+                &lt;goal&gt;lightning&lt;/goal&gt;
+            &lt;/goals&gt;
+            &lt;configuration&gt;
+                &lt;mode&gt;verify&lt;/mode&gt;
+                &lt;testSetXml&gt;data/test-set-foo.xml&lt;/testSetXml&gt;
+                &lt;jmeterCsv&gt;data/results-foo.csv&lt;/jmeterCsv&gt;
+                &lt;junitReportSuffix&gt;foo&lt;/junitReportSuffix&gt;
+                &lt;continueOnFailure&gt;true&lt;/continueOnFailure&gt;
+            &lt;/configuration&gt;
+        &lt;/execution&gt;
+        &lt;execution&gt;
+            &lt;id&gt;test-bar&lt;/id&gt;
+            &lt;goals&gt;
+                &lt;goal&gt;lightning&lt;/goal&gt;
+            &lt;/goals&gt;
+            &lt;configuration&gt;
+                &lt;mode&gt;verify&lt;/mode&gt;
+                &lt;testSetXml&gt;data/test-set-bar.xml&lt;/testSetXml&gt;
+                &lt;jmeterCsv&gt;data/results-bar.csv&lt;/jmeterCsv&gt;
+                &lt;junitReportSuffix&gt;bar&lt;/junitReportSuffix&gt;
+                &lt;continueOnFailure&gt;true&lt;/continueOnFailure&gt;
+            &lt;/configuration&gt;
+        &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt;
+</code></pre>
+
+    <p>In the configuration above, Lightning will be executed twice. The first execution will test
+        <code>results-foo.csv</code>, producing a JUnit XML report named <code>junit-foo.xml</code>. The second
+        execution will test <code>results-bar.csv</code>, producing a JUnit XML report named
+        <code>junit-bar.xml</code>. If <code>test-foo</code> were to fail, Lightning will continue executing
+        <code>test-bar</code>.</p>
+
+    <footer class="site-footer" data-ng-include="'footer.html'"></footer>
+
+</section>
+
+
+</body>
+</html>

@@ -1,0 +1,83 @@
+#!groovy
+
+library "SharedLib@${env.BRANCH_NAME}"
+
+pipeline {
+    agent {
+        label 'linux'
+    }
+    parameters {
+        string(name: 'RELEASE_VERSION', defaultValue: '9.0.0', description: '')
+        string(name: 'POST_RELEASE_SNAPSHOT_VERSION', defaultValue: '9.0.1-SNAPSHOT', description: '')
+        booleanParam(name: 'BUILD_CORE', defaultValue: true, description: '')
+        booleanParam(name: 'RELEASE', defaultValue: false, description: '')
+    }
+    options {
+        timestamps()
+        skipDefaultCheckout()
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+    stages {
+        stage('Prepare') {
+            steps {
+                cleanupWorkspaceAndCloneRepo()
+                sh "git checkout ${env.BRANCH_NAME}"
+                purge()
+            }
+        }
+        stage('Build lightning-core') {
+            when {
+                expression {
+                    "${params.BUILD_CORE}".toBoolean()
+                }
+            }
+            steps {
+                buildCore()
+            }
+        }
+        stage('Set release version number') {
+            steps {
+                sh "./mvnw -pl lightning-standalone versions:set -DnewVersion=${params.RELEASE_VERSION}"
+                sh "git add -A; git commit -m 'Lightning Standalone release version bump'"
+            }
+        }
+        stage('Run unit tests, generate JAR file and run E2E tests') {
+            steps {
+                sh './mvnw -pl lightning-standalone clean verify'
+            }
+            post {
+                always {
+                    junit 'lightning-standalone/target/surefire-reports/junitreports/*.xml'
+                    jacoco execPattern: '**/lightning-standalone/target/jacoco*.exec', classPattern: '**/lightning-standalone/target/classes', sourcePattern: '**/lightning-standalone/src/main/java'
+                }
+            }
+        }
+        stage('Tag release') {
+            steps {
+                sh "git tag standalone-${params.RELEASE_VERSION}"
+            }
+        }
+        stage('Archive JAR') {
+            steps {
+                archiveArtifacts artifacts: 'lightning-standalone/target/lightning-standalone-*.jar'
+            }
+        }
+        stage('Set snapshot version number') {
+            steps {
+                sh "./mvnw -pl lightning-standalone versions:set -DnewVersion=${params.POST_RELEASE_SNAPSHOT_VERSION}"
+                sh "git add -A; git commit -m 'Lightning Standalone post-release version bump'"
+            }
+        }
+        stage('Push release to origin') {
+            when {
+                expression {
+                    "${params.RELEASE}".toBoolean() && "${env.BRANCH_NAME}" == "master"
+                }
+            }
+            steps {
+                push()
+            }
+        }
+    }
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testSet>
+
+    <serverSideTest>
+        <testName>Test #2</testName>
+        <subType>GREATER_THAN</subType>
+        <description>Verify server-side resource utilisation</description>
+        <hostAndMetric>192.168.0.12 CPU</hostAndMetric>
+        <metricValueA>20000</metricValueA>
+    </serverSideTest>
+
+</testSet>
